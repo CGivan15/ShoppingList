@@ -2,4 +2,6 @@
     <string name="app_name">Shopping List</string>
     <string name="action_add">Add Item</string>
     <string name="action_clear">Clear List</string>
+    <string name="total_items_on_list">Total Items On List</string>
+    <string name="items_count">Items Count</string>
 </resources>

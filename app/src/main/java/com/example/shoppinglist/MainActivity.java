@@ -1,11 +1,14 @@
 package com.example.shoppinglist;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ListView;
 
 import java.util.ArrayList;
@@ -30,6 +33,10 @@ public class MainActivity extends AppCompatActivity {
     ArrayList<String> shoppingList = null;
     ArrayAdapter<String> adapter = null;
     ListView lv = null;
+    static Integer listCount;
+
+
+   private Button itemsCountButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,11 +45,30 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        ActionBar actionBar = getSupportActionBar();
+        actionBar.setTitle("Main Activity");
+        Button mBtn = findViewById(R.id.itemsCountButton);
+        mBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent(MainActivity.this, SecondActivity.class));
+            }
+        });
+
         shoppingList = getArrayVal(getApplicationContext());
         Collections.sort(shoppingList);
         adapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1, shoppingList);
-        lv = (ListView) findViewById(R.id.listView);
+        lv = findViewById(R.id.listView);
         lv.setAdapter(adapter);
+        listCount = shoppingList.size();
+
+        itemsCountButton = findViewById(R.id.itemsCountButton);
+        itemsCountButton.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v){
+                openItemCount();
+            }
+        });
 
         lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             public void onItemClick(AdapterView parent, View view, final int position, long id) {
@@ -54,7 +80,11 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
-    }
+        }
+
+        //Intent i = new Intent(MainActivity.this, SecondActivity.class);
+        //startActivity(i);
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -62,6 +92,8 @@ public class MainActivity extends AppCompatActivity {
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
+
+
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -83,6 +115,7 @@ public class MainActivity extends AppCompatActivity {
                     Collections.sort(shoppingList);
                     storeArrayVal(shoppingList, getApplicationContext());
                     lv.setAdapter(adapter);
+                    listCount = shoppingList.size();
                 }
             });
             builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -105,6 +138,7 @@ public class MainActivity extends AppCompatActivity {
                     shoppingList.clear();
                     storeArrayVal(shoppingList, getApplicationContext());
                     lv.setAdapter(adapter);
+                    listCount = shoppingList.size();
                 }
             });
             builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
@@ -132,20 +166,20 @@ public class MainActivity extends AppCompatActivity {
     // Store Shopping List
     public static void storeArrayVal( ArrayList<String> inArrayList, Context context)
     {
-        Set<String> WhatToWrite = new HashSet<String>(inArrayList);
+        Set<String> WhatToWrite = new HashSet<>(inArrayList);
         SharedPreferences WordSearchPutPrefs = context.getSharedPreferences("dbArrayValues", Activity.MODE_PRIVATE);
         SharedPreferences.Editor prefEditor = WordSearchPutPrefs.edit();
         prefEditor.putStringSet("myArray", WhatToWrite);
-        prefEditor.commit();
+        prefEditor.apply();
     }
 
     // Get shopping List
     public static ArrayList getArrayVal( Context dan)
     {
         SharedPreferences WordSearchGetPrefs = dan.getSharedPreferences("dbArrayValues",Activity.MODE_PRIVATE);
-        Set<String> tempSet = new HashSet<String>();
+        Set<String> tempSet = new HashSet<>();
         tempSet = WordSearchGetPrefs.getStringSet("myArray", tempSet);
-        return new ArrayList<String>(tempSet);
+        return new ArrayList<>(tempSet);
     }
 
     // Remove Item From List
@@ -159,6 +193,7 @@ public class MainActivity extends AppCompatActivity {
                 Collections.sort(shoppingList);
                 storeArrayVal(shoppingList, getApplicationContext());
                 lv.setAdapter(adapter);
+                listCount = shoppingList.size();
             }
         });
         builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
@@ -169,4 +204,10 @@ public class MainActivity extends AppCompatActivity {
         });
         builder.show();
     }
+
+    private void openItemCount() {
+        Intent intent = new Intent(this, SecondActivity.class);
+        startActivity(intent);
+    }
+
 }
