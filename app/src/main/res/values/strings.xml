@@ -4,4 +4,6 @@
     <string name="action_clear">Clear List</string>
     <string name="total_items_on_list">Total Items On List</string>
     <string name="items_count">Items Count</string>
+    <string name="title_activity_new_item">NewItemActivity</string>
+    <string name="title_activity_edit_item">EditItemActivity</string>
 </resources>

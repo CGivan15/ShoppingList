@@ -30,7 +30,8 @@ import android.view.View;
 
 
 public class MainActivity extends AppCompatActivity {
-    ArrayList<String> shoppingList = null;
+
+ArrayList<String> shoppingList = null;
     ArrayAdapter<String> adapter = null;
     ListView lv = null;
     static Integer listCount;
@@ -209,5 +210,4 @@ public class MainActivity extends AppCompatActivity {
         Intent intent = new Intent(this, SecondActivity.class);
         startActivity(intent);
     }
-
 }
