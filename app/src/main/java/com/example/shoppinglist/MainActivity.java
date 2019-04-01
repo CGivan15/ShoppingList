@@ -1,43 +1,30 @@
 package com.example.shoppinglist;
 
+import android.arch.lifecycle.Observer;
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v7.app.ActionBar;
+import android.support.annotation.Nullable;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.ListView;
 
-import java.util.ArrayList;
-import java.util.Collections;
-
-import java.util.HashSet;
-import java.util.Set;
-import android.app.AlertDialog;
-import android.widget.EditText;
-import android.content.DialogInterface;
-import android.content.Context;
-import android.content.SharedPreferences;
-import android.app.Activity;
+import java.util.List;
+import java.util.UUID;
 
 import android.widget.Toast;
-import android.widget.AdapterView;
-import android.widget.TextView;
 import android.view.View;
 
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements ItemListAdapter.OnDeleteClickListener {
 
-ArrayList<String> shoppingList = null;
-    ArrayAdapter<String> adapter = null;
-    ListView lv = null;
-    static Integer listCount;
-
-
-   private Button itemsCountButton;
+    private static final int NEW_ITEM_ACTIVITY_REQUEST_CODE = 1;
+    public static final int UPDATE_ITEM_ACTIVITY_REQUEST_CODE = 2;
+    private String TAG = this.getClass().getSimpleName();
+    private ItemViewModel itemViewModel;
+    private ItemListAdapter itemListAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,168 +33,70 @@ ArrayList<String> shoppingList = null;
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        ActionBar actionBar = getSupportActionBar();
-        actionBar.setTitle("Main Activity");
-        Button mBtn = findViewById(R.id.itemsCountButton);
-        mBtn.setOnClickListener(new View.OnClickListener() {
+        RecyclerView recyclerView = findViewById(R.id.recyclerview);
+        itemListAdapter = new ItemListAdapter(this, this);
+        recyclerView.setAdapter(itemListAdapter);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+
+        // Add new item
+        FloatingActionButton fab = findViewById(R.id.fab);
+        fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                startActivity(new Intent(MainActivity.this, SecondActivity.class));
+                Intent intent = new Intent(MainActivity.this, NewItemActivity.class);
+                startActivityForResult(intent, NEW_ITEM_ACTIVITY_REQUEST_CODE);
             }
         });
 
-        shoppingList = getArrayVal(getApplicationContext());
-        Collections.sort(shoppingList);
-        adapter = new ArrayAdapter(this, android.R.layout.simple_list_item_1, shoppingList);
-        lv = findViewById(R.id.listView);
-        lv.setAdapter(adapter);
-        listCount = shoppingList.size();
+        itemViewModel = ViewModelProviders.of(this).get(ItemViewModel.class);
 
-        itemsCountButton = findViewById(R.id.itemsCountButton);
-        itemsCountButton.setOnClickListener(new View.OnClickListener(){
+        itemViewModel.getAllItems().observe(this, new Observer<List<Item>>() {
             @Override
-            public void onClick(View v){
-                openItemCount();
+            public void onChanged(@Nullable List<Item> items) {
+                itemListAdapter.setItems(items);
             }
         });
-
-        lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            public void onItemClick(AdapterView parent, View view, final int position, long id) {
-                String selectedItem = ((TextView) view).getText().toString();
-                if (selectedItem.trim().equals(shoppingList.get(position).trim())) {
-                    removeElement(selectedItem, position);
-                } else {
-                    Toast.makeText(getApplicationContext(),"Error Removing Element", Toast.LENGTH_LONG).show();
-                }
-            }
-        });
-        }
-
-        //Intent i = new Intent(MainActivity.this, SecondActivity.class);
-        //startActivity(i);
-
+    }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == NEW_ITEM_ACTIVITY_REQUEST_CODE && resultCode == RESULT_OK) {
+
+            // Insert item
+            final String item_id = UUID.randomUUID().toString();
+            Item item = new Item(item_id, data.getStringExtra(NewItemActivity.ITEM_ADDED));
+            itemViewModel.insert(item);
+
+            Toast.makeText(
+                    getApplicationContext(),
+                    R.string.saved,
+                    Toast.LENGTH_LONG).show();
+        } else if (requestCode == UPDATE_ITEM_ACTIVITY_REQUEST_CODE && resultCode == RESULT_OK) {
+
+            // Update item
+            Item item = new Item(
+                    data.getStringExtra(EditItemActivity.ITEM_ID),
+                    data.getStringExtra(EditItemActivity.UPDATED_ITEM));
+            itemViewModel.update(item);
+
+            Toast.makeText(
+                    getApplicationContext(),
+                    R.string.updated,
+                    Toast.LENGTH_LONG).show();
+
+        } else {
+            Toast.makeText(
+                    getApplicationContext(),
+                    R.string.not_saved,
+                    Toast.LENGTH_LONG).show();
+        }
     }
-
-
 
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        // Add new item to list
-        if (id == R.id.action_add) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setTitle("Add Item");
-            final EditText input = new EditText(this);
-            builder.setView(input);
-            builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    shoppingList.add(preferredCase(input.getText().toString()));
-                    Collections.sort(shoppingList);
-                    storeArrayVal(shoppingList, getApplicationContext());
-                    lv.setAdapter(adapter);
-                    listCount = shoppingList.size();
-                }
-            });
-            builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    dialog.cancel();
-                }
-            });
-            builder.show();
-            return true;
-        }
-
-        // Clear List
-        if (id == R.id.action_clear) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setTitle("Clear Entire List");
-            builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    shoppingList.clear();
-                    storeArrayVal(shoppingList, getApplicationContext());
-                    lv.setAdapter(adapter);
-                    listCount = shoppingList.size();
-                }
-            });
-            builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    dialog.cancel();
-                }
-            });
-            builder.show();
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
-
-    // Capitalize first letter
-    public static String preferredCase(String original)
-    {
-        if (original.isEmpty())
-            return original;
-
-        return original.substring(0, 1).toUpperCase() + original.substring(1).toLowerCase();
-    }
-
-    // Store Shopping List
-    public static void storeArrayVal( ArrayList<String> inArrayList, Context context)
-    {
-        Set<String> WhatToWrite = new HashSet<>(inArrayList);
-        SharedPreferences WordSearchPutPrefs = context.getSharedPreferences("dbArrayValues", Activity.MODE_PRIVATE);
-        SharedPreferences.Editor prefEditor = WordSearchPutPrefs.edit();
-        prefEditor.putStringSet("myArray", WhatToWrite);
-        prefEditor.apply();
-    }
-
-    // Get shopping List
-    public static ArrayList getArrayVal( Context dan)
-    {
-        SharedPreferences WordSearchGetPrefs = dan.getSharedPreferences("dbArrayValues",Activity.MODE_PRIVATE);
-        Set<String> tempSet = new HashSet<>();
-        tempSet = WordSearchGetPrefs.getStringSet("myArray", tempSet);
-        return new ArrayList<>(tempSet);
-    }
-
-    // Remove Item From List
-    public void removeElement(String selectedItem, final int position){
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Remove " + selectedItem + "?");
-        builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                shoppingList.remove(position);
-                Collections.sort(shoppingList);
-                storeArrayVal(shoppingList, getApplicationContext());
-                lv.setAdapter(adapter);
-                listCount = shoppingList.size();
-            }
-        });
-        builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.cancel();
-            }
-        });
-        builder.show();
-    }
-
-    private void openItemCount() {
-        Intent intent = new Intent(this, SecondActivity.class);
-        startActivity(intent);
+    public void OnDeleteClickListener(Item myItem) {
+        // Delete Item
+        itemViewModel.delete(myItem);
     }
 }

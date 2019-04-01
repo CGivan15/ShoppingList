@@ -6,4 +6,11 @@
     <string name="items_count">Items Count</string>
     <string name="title_activity_new_item">NewItemActivity</string>
     <string name="title_activity_edit_item">EditItemActivity</string>
+    <string name="update">UPDATE</string>
+    <string name="cancel">CANCEL</string>
+    <string name="not_saved">Didn\'t Save</string>
+    <string name="updated">Item Updated</string>
+    <string name="saved">Item Saved</string>
+    <string name="update_item">Update Item</string>
+    <string name="no_item">No item</string>
 </resources>
